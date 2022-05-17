@@ -97,56 +97,59 @@ def ML(feature_sets, feature_set_names, y):
     Returns:
         dict: Nested dictionary with:
             1st level keys = feature_set_names, 
-            2nd level keys = lr_performance, svm_performance, cnn_performance
+            2nd level keys = lr, svm, cnn
             3rd level keys = confusion_matrix, classification_report
             
             e.g.:
             dict_keys(['X', 'X_bina', 'X_GoL'])
-            dict_keys(['lr_performance', 'svm_performance', 'cnn_performance'])
+            dict_keys(['lr', 'svm', 'cnn'])
             dict_keys(['confusion_matrix', 'classification_report'])
 
     """
-    # Empty dictionary for appending to performance metrics to. Will contain a key for each feature set.
-    performance = {}
-    for feature_set_name in feature_set_names:
-        performance[f"{feature_set_name}"] = 0
+    ############################################# Define models #############################################
+    
+    # Define CNN model
+    epochs = 15
+    input_shape = (28, 28, 1)
+    num_classes = len(set(y))
+    cnn = keras.Sequential(
+        [
+            keras.Input(shape=input_shape),
+            layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Flatten(),
+            layers.Dropout(0.5),
+            layers.Dense(num_classes, activation="softmax"),
+        ]
+    )
+
+    # Define logistic regression model
+    lr = LogisticRegression(max_iter=250)
+
+    # Define SVM model
+    clf = svm.SVC()
+
+
+    lr_performances = []
+    svm_performances = []
+    cnn_performances = []
 
     # Run ML
-    for X in feature_sets:
-
-        ############################################# Define models #############################################
-        # Define CNN model
-        epochs = 15
-        input_shape = (28, 28, 1)
-        num_classes = len(set(y))
-        cnn = keras.Sequential(
-            [
-                keras.Input(shape=input_shape),
-                layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
-                layers.MaxPooling2D(pool_size=(2, 2)),
-                layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
-                layers.MaxPooling2D(pool_size=(2, 2)),
-                layers.Flatten(),
-                layers.Dropout(0.5),
-                layers.Dense(num_classes, activation="softmax"),
-            ]
-        )
-
-        # Define logistic regression model
-        lr = LogisticRegression(max_iter=250)
-
-        # Define SVM model
-        clf = svm.SVC()
+    for feature_set in feature_sets:
 
         ############################################# Partitioning #############################################
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = .10, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(feature_set, y, test_size = .10, random_state=42)
 
         ############################################# Flattening #############################################
+        
         X_train_flat = [img.flatten() for img in X_train]
         X_test_flat = [img.flatten() for img in X_test]
 
         ############################################# Train + predict #############################################
+        
         # Train and predict LR
         lr.fit(X_train_flat, y_train)
         lr_predictions = lr.predict(X_test_flat)
@@ -181,7 +184,14 @@ def ML(feature_sets, feature_set_names, y):
         "classification_report": pd.DataFrame.from_dict(metrics.classification_report(y_test, svm_predictions, output_dict=True))
         }
 
-        for feature_set_name in feature_set_names:
-            performance[f"{feature_set_name}"] = {"lr_performance": lr_performance, "svm_performance": svm_performance, "cnn_performance": cnn_performance}
+        lr_performances.append(lr_performance)
+        svm_performances.append(svm_performance)
+        cnn_performances.append(cnn_performance)
     
-    return performance
+    ############################################# Saving performance metrics #############################################
+    performances = {}
+
+    for i in range(len(lr_performances)):
+        performances[f"{feature_set_names[i]}"] = {"lr": lr_performances[i], "svm": svm_performances[i], "cnn": cnn_performances[i]}
+    
+    return performances
