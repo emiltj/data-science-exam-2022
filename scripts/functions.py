@@ -131,7 +131,6 @@ def ML(feature_sets, feature_set_names, y):
     # Define SVM model
     clf = svm.SVC()
 
-
     lr_performances = []
     svm_performances = []
     cnn_performances = []
