@@ -86,6 +86,61 @@ def GoL(seed = np.ndarray, n_generations = int):
     
     return generations
 
+# Define function for corrosion
+def corrosion(seed: np.ndarray, n_generations: int, y: float, v: int, Q):
+    """Performs corrosion generations over time, as described in paper by Horsmans, Grøhn & Jessen, 2022
+
+    Args:
+        seed (np.ndarray): Image seed, to perform corrosion on - Defaults to np.ndarray.
+        n_generations (int): Number of generations to perform. Defaults to int.
+        y (float): Number describing how much corrosion takes place
+        v (int): Number describing the threshold for "smooth surfaces" (i.e. surfaces where corrosion doesn't happen)
+        Q (function): Function that calculates impending corrosion speed - also based on y.
+    """    
+    # Empty list for appending generations to (and start with the seed)
+    generations = []
+
+    # Append seed to list of generations
+    generations.append(seed)
+
+    # Apply 1-layer reflective-padding
+    seed = np.pad(seed, mode = 'reflect', pad_width = 1)
+
+    # Define n_rows and n_cols from shape of img
+    n_rows, n_cols = seed.shape
+
+    for generation in range(n_generations):
+
+        # Create image for next step, for overwriting
+        generation = np.array(np.zeros(shape=(n_rows, n_cols), dtype=np.int32))
+
+        for r in range(n_rows-2):
+            for c in range(n_cols-2):
+                
+                # seed[r+1, c+1] (the "middle" cell during each window) and context (cells around "middle" cell in window) ...
+                # ... has the right information. Check with: print(seed[r+1, c+1]) and print(context)
+                context = [seed[r, c], seed[r, c+1], seed[r, c+2], seed[r+1, c], seed[r+1, c+2], seed[r+2, c], seed[r+2, c+1], seed[r+2, c+2]]
+
+                # d (Difference) is difference between center and the lowest in the context
+                d = seed[r+1, c+1] - np.min(context)
+
+                # Any cell with difference > v and difference < 255 changes value to previous_value + q(d, y)
+                if 255 >= d and d >= v:
+                    generation[r+1, c+1] = seed[r+1, c+1] + Q(d, y)
+
+                # Any cell with difference smaller than v or with difference larger than 255, then the new generation has the same value as large generation
+                if d < v or d > 255:
+                    generation[r+1, c+1] = seed[r+1, c+1]
+            
+        # Assign newest generation as the new seed
+        seed = generation.copy()
+
+        # Append newest generation to list of generations 
+        generations.append(generation[1:-1, 1:-1])
+    
+    # Return generations
+    return(generations)
+
 def ML(feature_sets, feature_set_names, y):
     """Function for performing machine learning. Outputs performance metrics
 
