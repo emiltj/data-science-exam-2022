@@ -86,14 +86,18 @@ def GoL(seed = np.ndarray, n_generations = int):
     
     return generations
 
+# Define q(d, l) - Function that calculates impending corrosion speed - also based on y.
+def Q(d, l):
+    return (255 - d) * l
+
 # Define function for corrosion
-def corrosion(seed: np.ndarray, n_generations: int, y: float, v: int, Q):
+def corrosion(seed: np.ndarray, n_generations: int, l: float, v: int, Q):
     """Performs corrosion generations over time, as described in paper by Horsmans, Grøhn & Jessen, 2022
 
     Args:
         seed (np.ndarray): Image seed, to perform corrosion on - Defaults to np.ndarray.
         n_generations (int): Number of generations to perform. Defaults to int.
-        y (float): Number describing how much corrosion takes place
+        l (float): Number describing how much corrosion takes place
         v (int): Number describing the threshold for "smooth surfaces" (i.e. surfaces where corrosion doesn't happen)
         Q (function): Function that calculates impending corrosion speed - also based on y.
     """    
@@ -124,9 +128,9 @@ def corrosion(seed: np.ndarray, n_generations: int, y: float, v: int, Q):
                 # d (Difference) is difference between center and the lowest in the context
                 d = seed[r+1, c+1] - np.min(context)
 
-                # Any cell with difference > v and difference < 255 changes value to previous_value + q(d, y)
+                # Any cell with difference > v and difference < 255 changes value to previous_value + q(d, l)
                 if 255 >= d and d >= v:
-                    generation[r+1, c+1] = seed[r+1, c+1] + Q(d, y)
+                    generation[r+1, c+1] = seed[r+1, c+1] + Q(d, l)
 
                 # Any cell with difference smaller than v or with difference larger than 255, then the new generation has the same value as large generation
                 if d < v or d > 255:
@@ -140,6 +144,46 @@ def corrosion(seed: np.ndarray, n_generations: int, y: float, v: int, Q):
     
     # Return generations
     return(generations)
+
+# Define function for calculating measure of corrosion-increase-from-baseline on an entire feature set
+def corrosion_increase(X, y, n_generations, l, v, Q, mean_cells_active):
+    """Function for calculating measure of corrosion-increase-from-baseline on an entire feature set
+
+    Args:
+        X (np.nd.array): 3D array with dim(samples, 1st_dimension_of_img, 2nd_dimension_of_img)
+        y (np.nd.array): 1D array with labels for images
+        n_generations (int): Number of generations to perform
+        l (float): Number describing how much corrosion takes place
+        v (int): Number describing the threshold for "smooth surfaces" (i.e. surfaces where corrosion doesn't happen)
+        Q (function): Function that calculates impending corrosion speed - also based on y.
+        mean_cells_active (list): List of length 10, with average number of active cells for each label (0, 1, 2, etc.)
+    """
+    corrosion_increase_by_number = []
+
+    # For 0, 1, 2, ... len(X):
+    for i in range(len(list(X))):
+        
+        # Define seed, sum of seed and class of seed
+        seed = X[i]
+        sum_seed = sum(seed.flatten())
+        class_of_seed = y[i]
+        
+        # Generations of corrosion
+        generations = corrosion(seed, 8, 0.1, 6, Q)
+
+        corrosion_increases = []
+
+        # For each generation, calculate ??? (Jakob, definér?)
+        for i in generations:
+            sum_generation = sum(i.flatten())
+            active_in_img = len(i[i>0])
+            
+            # (generation_cell - seed_cell) * (avg_active_pixels_for_number / active_pixels_for_current_img)
+            corrosion_increases.append((sum_generation - sum_seed) * (mean_cells_active[class_of_seed] / active_in_img))
+        
+        corrosion_increase_by_number.append(corrosion_increases)
+
+    return(corrosion_increase_by_number)
 
 def ML(feature_sets, feature_set_names, y):
     """Function for performing machine learning. Outputs performance metrics
