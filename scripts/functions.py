@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
 
 # Define function for making binary
-def make_binary(img, threshold):
+def make_binary(img, threshold): 
     """Binarizes a 2D image on the basis of a threshold
 
     Args:
@@ -246,7 +246,7 @@ def ML(feature_sets, feature_set_names, y):
         
         # Train and predict LR
         lr.fit(X_train_flat, y_train)
-        lr_predictions = lr.predict(X_test_flat)
+        lr_predictions = lr.predict_proba(X_test_flat)
 
         # Train and predict CNN
         X_train_cnn = np.expand_dims(X_train, -1) # Make sure each img has dimensions 28, 28, 1
@@ -258,24 +258,27 @@ def ML(feature_sets, feature_set_names, y):
         cnn_predictions = cnn.predict(X_test_cnn) # Make predictions (outcome is in probabilites)
         cnn_predictions = [np.argmax(cnn_prediction) for cnn_prediction in cnn_predictions] # to go from list of probabilities [0.8, 0.143, 0.03, ...] to the index of the highest probability
 
-        ############################################# Validate #############################################
-        lr_performance = {
-        "confusion_matrix": metrics.confusion_matrix(y_test, lr_predictions),
-        "classification_report": pd.DataFrame.from_dict(metrics.classification_report(y_test, lr_predictions, output_dict=True))
-        }
+        # ############################################# Validate #############################################
+        # lr_performance = {
+        # "confusion_matrix": metrics.confusion_matrix(y_test, lr_predictions),
+        # "classification_report": pd.DataFrame.from_dict(metrics.classification_report(y_test, lr_predictions, output_dict=True))
+        # }
 
-        cnn_performance = {
-        "confusion_matrix": metrics.confusion_matrix(y_test, cnn_predictions),
-        "classification_report": pd.DataFrame.from_dict(metrics.classification_report(y_test, svm_predictions, output_dict=True))
-        }
+        # cnn_performance = {
+        # "confusion_matrix": metrics.confusion_matrix(y_test, cnn_predictions),
+        # "classification_report": pd.DataFrame.from_dict(metrics.classification_report(y_test, cnn_predictions, output_dict=True))
+        # }
 
-        lr_performances.append(lr_performance)
-        cnn_performances.append(cnn_performance)
+        # lr_performances.append(lr_performance)
+        # cnn_performances.append(cnn_performance)
+        lr_performances.append(lr_predictions)
+        cnn_performances.append(cnn_predictions)
     
-    ############################################# Saving performance metrics #############################################
+    # ############################################# Saving performance metrics #############################################
     performances = {}
 
     for i in range(len(lr_performances)):
-        performances[f"{feature_set_names[i]}"] = {"lr": lr_performances[i], "svm": svm_performances[i], "cnn": cnn_performances[i]}
+        performances[f"{feature_set_names[i]}"] = {"lr": lr_performances[i], "cnn": cnn_performances[i]}
     
-    return performances
+    # return performances
+    return performances, #lr_performances, cnn_performances
