@@ -179,7 +179,7 @@ def corrosion_increase(X, y, n_generations, l, v, Q, mean_cells_active):
             active_in_img = len(i[i>0])
             
             # (generation_cell - seed_cell) * (avg_active_pixels_for_number / active_pixels_for_current_img)
-            corrosion_increases.append((sum_generation - sum_seed) * (mean_cells_active[class_of_seed] / active_in_img))
+            corrosion_increases.append((sum_generation - sum_seed)) #* (mean_cells_active[class_of_seed] / active_in_img))
         
         corrosion_increase_by_number.append(corrosion_increases)
 
