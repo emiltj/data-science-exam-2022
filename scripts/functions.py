@@ -196,12 +196,12 @@ def ML(feature_sets, feature_set_names, y):
     Returns:
         dict: Nested dictionary with:
             1st level keys = feature_set_names, 
-            2nd level keys = lr, svm, cnn
+            2nd level keys = lr, cnn
             3rd level keys = confusion_matrix, classification_report
             
             e.g.:
             dict_keys(['X', 'X_bina', 'X_GoL'])
-            dict_keys(['lr', 'svm', 'cnn'])
+            dict_keys(['lr', 'cnn'])
             dict_keys(['confusion_matrix', 'classification_report'])
 
     """
@@ -227,11 +227,7 @@ def ML(feature_sets, feature_set_names, y):
     # Define logistic regression model
     lr = LogisticRegression(max_iter=250)
 
-    # Define SVM model
-    clf = svm.SVC()
-
     lr_performances = []
-    svm_performances = []
     cnn_performances = []
 
     # Run ML
@@ -252,10 +248,6 @@ def ML(feature_sets, feature_set_names, y):
         lr.fit(X_train_flat, y_train)
         lr_predictions = lr.predict(X_test_flat)
 
-        # Train and predict SVM
-        clf.fit(X_train_flat, y_train)
-        svm_predictions = clf.predict(X_test_flat)
-
         # Train and predict CNN
         X_train_cnn = np.expand_dims(X_train, -1) # Make sure each img has dimensions 28, 28, 1
         X_test_cnn = np.expand_dims(X_test, -1)
@@ -271,11 +263,6 @@ def ML(feature_sets, feature_set_names, y):
         "confusion_matrix": metrics.confusion_matrix(y_test, lr_predictions),
         "classification_report": pd.DataFrame.from_dict(metrics.classification_report(y_test, lr_predictions, output_dict=True))
         }
-        
-        svm_performance = {
-        "confusion_matrix": metrics.confusion_matrix(y_test, svm_predictions),
-        "classification_report": pd.DataFrame.from_dict(metrics.classification_report(y_test, svm_predictions, output_dict=True))
-        }
 
         cnn_performance = {
         "confusion_matrix": metrics.confusion_matrix(y_test, cnn_predictions),
@@ -283,7 +270,6 @@ def ML(feature_sets, feature_set_names, y):
         }
 
         lr_performances.append(lr_performance)
-        svm_performances.append(svm_performance)
         cnn_performances.append(cnn_performance)
     
     ############################################# Saving performance metrics #############################################
