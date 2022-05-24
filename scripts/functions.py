@@ -256,7 +256,7 @@ def ML(feature_sets, feature_set_names, y):
         cnn.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"]) # Compile the model
         cnn.fit(X_train_cnn, y_train_cnn, epochs=epochs, verbose = False) # Fit the model
         cnn_predictions = cnn.predict(X_test_cnn) # Make predictions (outcome is in probabilites)
-        cnn_predictions = [np.argmax(cnn_prediction) for cnn_prediction in cnn_predictions] # to go from list of probabilities [0.8, 0.143, 0.03, ...] to the index of the highest probability
+        #cnn_predictions = [np.argmax(cnn_prediction) for cnn_prediction in cnn_predictions] # to go from list of probabilities [0.8, 0.143, 0.03, ...] to the index of the highest probability
 
         # ############################################# Validate #############################################
         # lr_performance = {
